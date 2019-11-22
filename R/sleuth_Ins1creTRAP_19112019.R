@@ -51,6 +51,45 @@ head(t2g)
 # Add to the sleuth object
 so <- sleuth_prep(s2c, target_mapping = t2g, extra_bootstrap_summary = TRUE, read_bootstrap_tpm = TRUE)
 
+# kallisto abundance table ------------------------------------------------
+# Get kallisto abundance table from sleuth object
+count_table <- kallisto_table(so, use_filtered = FALSE, normalized = FALSE, include_covariates = TRUE)
+head(count_table)
+
+# kallisto count distribution
+# Choose the sample with most uniquely mapped read:5659_S20
+standard_theme_barplot <- theme(
+  axis.line = element_line(colour = "black"),
+  axis.text.x = element_text(color = "black", size = 12, face = "bold", angle = 45, hjust = 1),
+  axis.text.y = element_text(color = "black", size = 16, face = "bold"),
+  axis.title.x = element_text(color = "black", size = 18, face = "bold"),
+  axis.title.y = element_text(color = "black", size = 18, face = "bold"),
+  strip.text.x = element_text(color = "black", size = 18, face = "bold"),
+  strip.background = element_rect(fill = "white"),
+  legend.title = element_blank(),
+  legend.text = element_text(color = "black", size = 16, face = "bold"),
+  legend.key = element_rect(fill = "white"), # Remove grey background of the legend
+  panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  panel.background = element_blank(),
+  panel.border = element_rect(colour = "black", fill = NA, size = 2),
+  plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+  plot.title = element_text(color = "black", size = 16, face = "bold")
+)
+
+geneCount_p1 <- count_table %>%
+  filter(id == "5659_S20") %>%
+  ggplot(aes(x = est_counts))
+
+geneCount_p2 <- geneCount_p1 +
+  geom_histogram(stat = "bin", bins = 100) +
+  xlim(-5, 300) +
+  labs(title = "Estimated count distribution", x = "Estimated transcript counts from kallisto", y = "Number of transcripts") +
+  standard_theme_barplot
+
+geneCount_p2
+
+ggsave(here::here("graph/Ins1creTRAP_kallisto_distribution_22112019.png"), geneCount_p2)
+
 # PCA ---------------------------------------------------------------------
 # Define standard plot themne
 standard_theme <- theme(
@@ -113,23 +152,24 @@ pgd
 ggsave(here::here("graph/Ins1creTRAP_Density_22112019.png"), pgd)
 
 # Construct reduced and full model ----------------------------------------
-so <- sleuth_fit(so, ~genotype, 'reduced')
+so <- sleuth_fit(so, ~genotype, "reduced")
 
-so <- sleuth_fit(so, ~genotype + condition, 'full')
+so <- sleuth_fit(so, ~ genotype + condition, "full")
 
-# Likelihood ratio test (lrt) 
-so <- sleuth_lrt(so, 'reduced', 'full')
+# Likelihood ratio test (lrt)
+so <- sleuth_lrt(so, "reduced", "full")
 
 # Gene-level differential expression results
-sleuth_table_gene <- sleuth_results(so, 'reduced:full', 'lrt', show_all = FALSE)
+sleuth_table_gene <- sleuth_results(so, "reduced:full", "lrt", show_all = FALSE)
 sleuth_table_gene <- dplyr::filter(sleuth_table_gene, qval <= 0.05)
 head(sleuth_table_gene, 20)
 
 # Consistent transcript-level differential expression results
-sleuth_table_tx <- sleuth_results(so, 'reduced:full', 'lrt', show_all = FALSE, pval_aggregate = FALSE)
+sleuth_table_tx <- sleuth_results(so, "reduced:full", "lrt", show_all = FALSE, pval_aggregate = FALSE)
 sleuth_table_tx <- dplyr::filter(sleuth_table_tx, qval <= 0.05)
 head(sleuth_table_tx, 20)
 
+# Launch Shinny app
 sleuth_live(so)
 
 ## Transcript: Ins1
