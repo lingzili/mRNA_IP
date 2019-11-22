@@ -113,7 +113,6 @@ pgd
 ggsave(here::here("graph/Ins1creTRAP_Density_22112019.png"), pgd)
 
 # Construct reduced and full model ----------------------------------------
-
 so <- sleuth_fit(so, ~genotype, 'reduced')
 
 so <- sleuth_fit(so, ~genotype + condition, 'full')
@@ -168,4 +167,3 @@ plot_bootstrap(so, "ENSMUST00000057270.8", units = "tpm", color_by = "condition"
   labs(title = "Pnlip", x = NULL, y = "TPM")
 
 dev.off()
-
