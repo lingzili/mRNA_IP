@@ -1,0 +1,13 @@
+{
+	"n_targets": 118489,
+	"n_bootstraps": 100,
+	"n_processed": 29617273,
+	"n_pseudoaligned": 24114831,
+	"n_unique": 12525863,
+	"p_pseudoaligned": 81.4,
+	"p_unique": 42.3,
+	"kallisto_version": "0.46.0",
+	"index_version": 10,
+	"start_time": "Fri Nov 22 08:29:06 2019",
+	"call": "kallisto quant -t 10 -i /data/home/lingzili/mm10_genome/Mus_musculus/UCSC/GRCm38_kallisto/GRCm38.cdna.all.idx --gtf /data/home/lingzili/mm10_genome/Mus_musculus/UCSC/GRCm38_kallisto/Mus_musculus.GRCm38.96.gtf.gz -o kallistoOutput/5659_S20 -b 100 trimOutput/5659_S20_R1_001_val_1.fq.gz trimOutput/5659_S20_R2_001_val_2.fq.gz"
+}
