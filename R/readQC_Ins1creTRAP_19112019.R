@@ -77,23 +77,23 @@ rRNA_p2
 ggsave(here::here("graph/Ins1creTRAP_19112019/rRNA_23112019.png"), rRNA_p2)
 
 # genebody coverage -------------------------------------------------------
-##### Start from HERE
+# Load genebody coverage data
+genebody <- read.csv("~/mRNA_IP/count/rseqc_gene_body_coverage_plot.csv")
+View(genebody)
 
+# Rename column names
+colnames(genebody) <- c(
+  "Percentile", "TRAP input", "Ins1creTRAP input 1", "Ins1creTRAP input 2",
+  "TRAP IP", "Ins1creTRAP IP 1", "Ins1creTRAP IP 2",
+  "TRAP supernatant", "Ins1creTRAP supernatant 1", "Ins1creTRAP supernatant 2"
+)
 
 # Convert to long format
 genebody_long <- genebody %>%
-  gather(Loci, Coverage, 1:100)
-
-# Change Loci to numeric
-genebody_long$Loci <- gsub("V", "", genebody_long$Loci)
-
-genebody_long$Loci <- as.numeric(genebody_long$Loci)
-
-# Rank the sample
-genebody_long$V101 <- factor(genebody_long$V101, levels = c("SM5169", "SM5165", "SM5170", "SM5166", "SM4996", "SM4998"))
+  gather(Sample, Coverage, 2:10)
 
 # Set standard theme for line graph
-standard_theme_facet_line <- theme(
+standard_theme_line <- theme(
   axis.line = element_line(colour = "black"),
   axis.text.x = element_text(color = "black", size = 16, face = "bold"),
   axis.text.y = element_text(color = "black", size = 16, face = "bold"),
@@ -114,56 +114,53 @@ standard_theme_facet_line <- theme(
 
 # Line graph for genebody coverage
 genebody_p1 <- genebody_long %>%
-  ggplot(aes(x = Loci, y = Coverage, color = V101, group = V101))
+  ggplot(aes(x = Percentile, y = Coverage, color = Sample))
 
 genebody_p2 <- genebody_p1 +
   geom_line(size = 1) +
   labs(title = "Genebody coverage", x = "Gene body percentile (5'->3')", y = "Coverage") +
-  scale_color_manual(values = c("#FF9999", "#00AFBB", "#FF9999", "#00AFBB", "#FF9999", "#00AFBB"), labels = c("SM4996" = "GcgcreTRAP 2 Input", "SM4998" = "GcgcreTRAP 2 Pulldown", "SM5169" = "TRAP Input", "SM5165" = "TRAP Pulldown", "SM5170" = "GcgcreTRAP 1 Input", "SM5166" = "GcgcreTRAP 1 Pulldown")) +
-  standard_theme_facet_line
+  standard_theme_line
 
 genebody_p2
 
-ggsave(here::here("graph/genebody_09092019.png"), genebody_p2, width = 8, height = 6)
+ggsave(here::here("graph/Ins1creTRAP_19112019/genebody_23112019.png"), genebody_p2)
 
 # Read genomic origin -----------------------------------------------------
-Origin <- read_excel("data/Read_Distribution.xlsx")
+Origin <- read.csv("~/mRNA_IP/count/rseqc_read_distribution_plot.csv")
 View(Origin)
 
-# Set standard theme for barplot
-standard_theme_barplot <- theme(
-  axis.line = element_line(colour = "black"),
-  axis.text.x = element_text(color = "black", size = 16, face = "bold", angle = 45, hjust = 1),
-  axis.text.y = element_text(color = "black", size = 16, face = "bold"),
-  axis.title.x = element_text(color = "black", size = 18, face = "bold"),
-  axis.title.y = element_text(color = "black", size = 18, face = "bold"),
-  strip.text.x = element_text(color = "black", size = 18, face = "bold"),
-  strip.background = element_rect(fill = "white"),
-  legend.title = element_blank(),
-  legend.text = element_text(color = "black", size = 16, face = "bold"),
-  legend.key = element_rect(fill = "white"), # Remove grey background of the legend
-  panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-  panel.background = element_blank(),
-  panel.border = element_rect(colour = "black", fill = NA, size = 2),
-  plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
-  plot.title = element_text(color = "black", size = 16, face = "bold")
-)
+# Rename column names
+colnames(Origin)[1] <- "Sample"
+colnames(Origin)[3] <- "5' UTR"
+colnames(Origin)[4] <- "3' UTR"
 
-# Rank the sample
-Origin$Sample <- factor(Origin$Sample, levels = c("SM5169", "SM5165", "SM5170", "SM5166", "SM4996", "SM4998", "SM4997"))
+# Convert to long format
+Origin_long <- Origin %>%
+  gather(Type, Percent, 2:12)
+
+# Rank the mapped labels and samples
+Origin_long$Type <- factor(Origin_long$Type, levels = c(
+  "TSS_up_1kb", "TSS_up_5kb", "TSS_up_10kb",
+  "TES_down_1kb", "TES_down_5kb", "TES_down_10kb",
+  "Other_intergenic", "Introns", "5' UTR", "3' UTR", "Exons_CDS"
+))
+
+Origin_long$Sample <- factor(Origin_long$Sample, levels = c(
+  "TRAP input", "Ins1creTRAP input 1", "Ins1creTRAP input 2",
+  "TRAP IP", "Ins1creTRAP IP 1", "Ins1creTRAP IP 2",
+  "TRAP supernatant", "Ins1creTRAP supernatant 1", "Ins1creTRAP supernatant 2"
+))
 
 # Barplot for read genomic origin
-origin_p1 <- Origin %>%
-  ggplot(aes(x = Sample, y = Tag_Percent, fill = Origin))
+origin_p1 <- Origin_long %>%
+  ggplot(aes(x = Sample, y = Percent, fill = Type))
 
 origin_p2 <- origin_p1 +
   geom_bar(stat = "identity") +
   labs(title = "Read genomic origins", x = NULL, y = "% Tags") +
-  scale_x_discrete(labels = c("SM4996" = "GcgcreTRAP 2 Input", "SM4998" = "GcgcreTRAP 2 Pulldown", "SM5169" = "TRAP Input", "SM5165" = "TRAP Pulldown", "SM5170" = "GcgcreTRAP 1 Input", "SM5166" = "GcgcreTRAP 1 Pulldown")) +
-  ylim(0, 100) +
-  scale_fill_manual(values = c("red", "#CC6666", "pink", "blue", "green", "darkgreen", "lightgreen", "yellow", "grey", "black")) +
+  scale_fill_brewer(palette = "Spectral") +
   standard_theme_barplot
 
 origin_p2
 
-ggsave(here::here("graph/readOrigin_09092019.png"), origin_p2, width = 8, height = 6)
+ggsave(here::here("graph/Ins1creTRAP_19112019/readOrigin_23112019.png"), origin_p2)
