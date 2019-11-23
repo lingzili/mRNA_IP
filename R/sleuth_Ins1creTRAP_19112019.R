@@ -11,15 +11,15 @@ getwd()
 sample_id <- c("5652_S13", "5653_S14", "5654_S15", "5655_S16", "5656_S17", "5657_S18", "5658_S19", "5659_S20", "5660_S21")
 
 paths <- list(
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5652_S13",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5653_S14",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5654_S15",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5655_S16",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5656_S17",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5657_S18",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5658_S19",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5659_S20",
-  "C:/Users/lingzili/Documents/mRNA_IP//kallisto/Ins1creTRAP_19112019/5660_S21"
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5652_S13",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5653_S14",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5654_S15",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5655_S16",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5656_S17",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5657_S18",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5658_S19",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5659_S20",
+  "C:/Users/lingzili/Documents/mRNA_IP/kallisto/Ins1creTRAP_19112019/5660_S21"
 )
 
 # Add sample names to file paths
@@ -51,6 +51,7 @@ head(t2g)
 # Add to the sleuth object
 so <- sleuth_prep(s2c, target_mapping = t2g, extra_bootstrap_summary = TRUE, read_bootstrap_tpm = TRUE)
 
+model(so)
 # kallisto abundance table ------------------------------------------------
 # Get kallisto abundance table from sleuth object
 count_table <- kallisto_table(so, use_filtered = FALSE, normalized = FALSE, include_covariates = TRUE)

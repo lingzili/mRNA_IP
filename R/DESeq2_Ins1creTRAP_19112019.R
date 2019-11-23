@@ -1,19 +1,21 @@
 # DESeq2 analysis on mRNA IP sequenced on 19.11.2019
 library(tidyverse)
+library(egg)
+library(grid)
 library(here)
 library(DESeq2)
 library(pheatmap)
 
 # Load data ---------------------------------------------------------------
 # Load metadata
-metaData <- read.csv("~/RNA_Pulldown/data/metadata_19112019.csv", row.names = 1)
+metaData <- read.csv("~/mRNA_IP/count/metadata_19112019.csv", row.names = 1)
 View(metaData)
 
 # Load count table
-data <- read.csv("~/RNA_Pulldown/data/featureCount_19112019_extraction.txt", row.names = 1, sep = "")
+data <- read.csv("~/mRNA_IP/count/featureCount_19112019_extraction.txt", row.names = 1, sep = "")
 
 # Order by column names
-data <- data %>% select(sort(names(.)))
+data <- data %>% dplyr::select(sort(names(.)))
 
 # Across all columns, remove "X"
 names(data) <- gsub("X", "", names(data))
@@ -27,6 +29,113 @@ dds <- DESeqDataSetFromMatrix(countData = data, colData = metaData, design = ~sa
 dds <- estimateSizeFactors(dds)
 sizeFactors(dds)
 normalized_counts <- counts(dds, normalized = TRUE)
+
+# Marker genes ------------------------------------------------------------
+# By R plot
+png("Ins1_22112019.png")
+par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
+plotCounts(dds, gene = "Ins1", intgroup = "sampleName", xlab = "")
+dev.off()
+
+png("Mafa_22112019.png")
+par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
+plotCounts(dds, gene = "Mafa", intgroup = "sampleName", xlab = "")
+dev.off()
+
+png("Gcg_22112019.png")
+par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
+plotCounts(dds, gene = "Gcg", intgroup = "sampleName", xlab = "")
+dev.off()
+
+png("Pnlip_22112019.png")
+par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
+plotCounts(dds, gene = "Pnlip", intgroup = "sampleName", xlab = "")
+dev.off()
+
+# By ggplot2
+# Set standard theme for barplot
+standard_theme_barplot <- theme(
+  axis.line = element_line(colour = "black"),
+  axis.text.x = element_text(color = "black", size = 12, face = "bold", angle = 45, hjust = 1),
+  axis.text.y = element_text(color = "black", size = 16, face = "bold"),
+  axis.title.x = element_text(color = "black", size = 18, face = "bold"),
+  axis.title.y = element_text(color = "black", size = 18, face = "bold"),
+  strip.text.x = element_text(color = "black", size = 18, face = "bold"),
+  strip.background = element_rect(fill = "white"),
+  legend.title = element_blank(),
+  legend.text = element_text(color = "black", size = 16, face = "bold"),
+  legend.key = element_rect(fill = "white"), # Remove grey background of the legend
+  panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  panel.background = element_blank(),
+  panel.border = element_rect(colour = "black", fill = NA, size = 2),
+  plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+  plot.title = element_text(color = "black", size = 16, face = "bold")
+)
+
+# Rename column names
+colnames(normalized_counts) <- c(
+  "TRAP input", "Ins1creTRAP input 1", "Ins1creTRAP input 2",
+  "TRAP IP", "Ins1creTRAP IP 1", "Ins1creTRAP IP 2",
+  "TRAP supernatant", "Ins1creTRAP supernatant 1", "Ins1creTRAP supernatant 2"
+)
+
+counts <- data.frame(gene = row.names(normalized_counts), normalized_counts)
+
+# Convert to long format
+counts_long <- counts %>%
+  gather(Sample, Count, 2:10)
+
+counts_long$Sample <- factor(counts_long$Sample, levels = c(
+  "Ins1creTRAP.input.1", "Ins1creTRAP.input.2", "TRAP.input",
+  "Ins1creTRAP.IP.1", "Ins1creTRAP.IP.2", "TRAP.IP",
+  "Ins1creTRAP.supernatant.1", "Ins1creTRAP.supernatant.2", "TRAP.supernatant"
+))
+
+# Ins1
+Ins1_p1 <- counts_long %>%
+  filter(gene == "Ins1") %>%
+  ggplot(aes(x = Sample, y = Count, fill = Sample))
+
+Ins1_p2 <- Ins1_p1 +
+  geom_bar(stat = "identity", color = "black") +
+  labs(title = "Ins1", x = NULL, y = "DESeq2-normalized counts") +
+  scale_fill_brewer(palette = "Spectral") +
+  standard_theme_barplot
+
+Ins1_p2
+
+# Mafa
+Mafa_plot <- counts_long %>%
+  filter(gene == "Mafa") %>%
+  ggplot(aes(x = Sample, y = Count, fill = Sample)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(title = "Mafa", x = NULL, y = "DESeq2-normalized counts") +
+  scale_fill_brewer(palette = "Spectral") +
+  standard_theme_barplot
+
+Mafa_plot
+
+# Gcg
+Gcg_plot <- counts_long %>%
+  filter(gene == "Gcg") %>%
+  ggplot(aes(x = Sample, y = Count, fill = Sample)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(title = "Gcg", x = NULL, y = "DESeq2-normalized counts") +
+  scale_fill_brewer(palette = "Spectral") +
+  standard_theme_barplot
+
+Gcg_plot
+
+# Pnlip
+Pnlip_plot <- counts_long %>%
+  filter(gene == "Pnlip") %>%
+  ggplot(aes(x = Sample, y = Count, fill = Sample)) +
+  geom_bar(stat = "identity", color = "black") +
+  labs(title = "Pnlip", x = NULL, y = "DESeq2-normalized counts") +
+  scale_fill_brewer(palette = "Spectral") +
+  standard_theme_barplot
+
+Pnlip_plot
 
 # rlog (regularized-logarithm) transformation
 rld <- rlog(dds, blind = TRUE)
@@ -52,9 +161,10 @@ standard_theme <- theme(
 
 pca <- plotPCA(rld, intgroup = "sampleName") + standard_theme
 
-pca
+pca_fixed <- set_panel_size(pca, width = unit(10, "cm"), height = unit(4, "in"))
 
-ggsave(here::here("graph/Ins1creTRAP_PCA_19112019.png"), pca)
+grid.newpage()
+grid.draw(pca_fixed)
 
 # Extract the rlog matrix from the object
 rld_mat <- assay(rld)
@@ -73,23 +183,3 @@ res <- results(dds)
 # Order by p value
 res <- res[order(res$padj), ]
 summary(res)
-
-png("Ins1_22112019.png")
-par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
-plotCounts(dds, gene = "Ins1", intgroup = "sampleName", xlab = "")
-dev.off()
-
-png("Mafa_22112019.png")
-par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
-plotCounts(dds, gene = "Mafa", intgroup = "sampleName", xlab = "")
-dev.off()
-
-png("Gcg_22112019.png")
-par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
-plotCounts(dds, gene = "Gcg", intgroup = "sampleName", xlab = "")
-dev.off()
-
-png("Pnlip_22112019.png")
-par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
-plotCounts(dds, gene = "Pnlip", intgroup = "sampleName", xlab = "")
-dev.off()
