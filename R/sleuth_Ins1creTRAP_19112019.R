@@ -51,11 +51,13 @@ head(t2g)
 # Add to the sleuth object
 so <- sleuth_prep(s2c, target_mapping = t2g, extra_bootstrap_summary = TRUE, read_bootstrap_tpm = TRUE)
 
-model(so)
 # kallisto abundance table ------------------------------------------------
 # Get kallisto abundance table from sleuth object
 count_table <- kallisto_table(so, use_filtered = FALSE, normalized = FALSE, include_covariates = TRUE)
 head(count_table)
+
+# Export kallisto abundance table
+write.csv(count_table, file = "kallisto_count_19112019.csv", row.names = FALSE)
 
 # kallisto count distribution
 # Choose the sample with most uniquely mapped read:5659_S20
@@ -170,9 +172,6 @@ sleuth_table_tx <- sleuth_results(so, "reduced:full", "lrt", show_all = FALSE, p
 sleuth_table_tx <- dplyr::filter(sleuth_table_tx, qval <= 0.05)
 head(sleuth_table_tx, 20)
 
-# Launch Shinny app
-sleuth_live(so)
-
 ## Transcript: Ins1
 png("graph/InscreTRAP_Ins1_22110219.png", width = 800, height = 400, units = "px")
 
@@ -208,3 +207,20 @@ plot_bootstrap(so, "ENSMUST00000057270.8", units = "tpm", color_by = "condition"
   labs(title = "Pnlip", x = NULL, y = "TPM")
 
 dev.off()
+
+# Fold change -------------------------------------------------------------
+so <- sleuth_wt(so, "conditionIP")
+
+wt_results <- sleuth_results(so, "conditionIP", "wt", show_all = TRUE)
+
+# Create a table of significantly differential genes
+table(wt_results[, "qval"] < 0.05)
+
+wt_significant <- dplyr::filter(wt_results, qval <= 0.05)
+
+plot_volcano(so, "conditionIP", test_type = "wt", which_model = "full", sig_level = 0.05, point_alpha = 0.2) +
+  standard_theme +
+  labs(x = "Fold change")
+
+# Launch Shinny app
+sleuth_live(so)

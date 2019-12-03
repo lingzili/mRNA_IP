@@ -5,6 +5,12 @@ library(grid)
 library(here)
 library(DESeq2)
 library(pheatmap)
+library(org.Mm.eg.db)
+library(DOSE)
+library(pathview)
+library(clusterProfiler)
+library(AnnotationHub)
+library(ensembldb)
 
 # Load data ---------------------------------------------------------------
 # Load metadata
@@ -137,8 +143,21 @@ Pnlip_plot <- counts_long %>%
 
 Pnlip_plot
 
+# Count data transformations ----------------------------------------------
 # rlog (regularized-logarithm) transformation
 rld <- rlog(dds, blind = TRUE)
+
+# Extract the rlog matrix from the object
+rld_mat <- assay(rld)
+
+# Compute pairwise correlation values
+rld_cor <- cor(rld_mat)
+
+# Plot heatmap
+pheatmap(rld_cor,
+  labels_row = metaData$sampleName, labels_col = metaData$sampleName, angle_col = 45,
+  legend = FALSE, cellwidth = 25, cellheight = 25
+)
 
 # PCA plot ----------------------------------------------------------------
 # Define standard plot themne
@@ -166,20 +185,48 @@ pca_fixed <- set_panel_size(pca, width = unit(10, "cm"), height = unit(4, "in"))
 grid.newpage()
 grid.draw(pca_fixed)
 
-# Extract the rlog matrix from the object
-rld_mat <- assay(rld)
-
-# Compute pairwise correlation values
-rld_cor <- cor(rld_mat)
-
-# Plot heatmap
-pheatmap(rld_cor, labels_row = metadata$sampleName, labels_col = metadata$sampleName)
-
+# Differential expression analysis ----------------------------------------
+# Run DESeq2 differential expression analysis
 dds <- DESeq(dds, parallel = TRUE)
 
-# Inspecting the results table
-res <- results(dds)
+# Check the fit of the dispersion estimates
+plotDispEsts(dds)
+
+# Inspecting the results table (adjusted p-value < 0.05)
+res <- results(dds, contrast = c("sampleType", "IP", "Input"), alpha = 0.05)
 
 # Order by p value
 res <- res[order(res$padj), ]
 summary(res)
+
+# GO over-representation analysis -----------------------------------------
+# Add Ensembl and Entrez IDs
+res$entrez <- mapIds(org.Mm.eg.db, keys = row.names(res), column = "ENTREZID", keytype = "SYMBOL", multiVals = "first")
+
+res$ensembl <- mapIds(org.Mm.eg.db, keys = row.names(res), column = "ENSEMBL", keytype = "SYMBOL", multiVals = "first")
+
+head(res)
+
+# Create background dataset for hypergeometric testing using all genes tested for significance in the results
+allOE_genes <- as.character(res$ensembl)
+
+# Extract significant results
+sigOE <- subset(res, padj < 0.05)
+
+sigOE_genes <- as.character(sigOE$ensembl)
+
+# Run GO enrichment analysis
+## BP: Biological Process, MF: Molecular Function, CC: Cellular Component, or “ALL” for all three
+ego <- enrichGO(
+  gene = sigOE_genes, universe = allOE_genes, keyType = "ENSEMBL", OrgDb = org.Mm.eg.db,
+  ont = "BP", pAdjustMethod = "BH", qvalueCutoff = 0.05, readable = TRUE)
+
+png("graph/Ins1creTRAP_19112019/GO_BP_03120219.png", width = 600, height = 600, units = "px")
+par(mar = c(2, 2, 2, 2))
+dotplot(ego, showCategory = 25)
+dev.off()
+
+png("graph/Ins1creTRAP_19112019/GO_Clusters_03120219.png", width = 800, height = 800, units = "px")
+par(mar = c(2, 2, 2, 2))
+emapplot(ego, showCategory = 25)
+dev.off()
