@@ -164,3 +164,37 @@ origin_p2 <- origin_p1 +
 origin_p2
 
 ggsave(here::here("graph/Ins1creTRAP_19112019/readOrigin_23112019.png"), origin_p2)
+
+# EstimateLibraryComplexity -----------------------------------------------
+# Load data in while loop
+sampleList <- c("5657_S18", "5659_S20", "5653_S14", "5656_S17", "5654_S15", "5660_S21", "5652_S13", "5655_S16", "5658_S19")
+
+i <- 1
+
+while (i <= 9) {
+  assign(paste0("x", sampleList[i]), read.delim(paste0("~/mRNA_IP/count/", sampleList[i], ".lib.metrics.txt")))
+  i <- i + 1
+}
+
+# Merge multiple data frames
+LibraryComplexity <- merge_recurse(list(x5652_S13, x5653_S14, x5654_S15, x5655_S16, x5656_S17, x5657_S18, x5658_S19, x5659_S20, x5660_S21),
+  by = "duplication_group_count"
+)
+
+comp_p1 <- LibraryComplexity %>%
+  gather(id, dupCount, 2:10) %>%
+  filter(duplication_group_count <= 19) %>%
+  ggplot(aes(x = duplication_group_count, y = dupCount, color = id)) +
+  geom_point(size = 2, alpha = .7)
+
+comp_p2 <- comp_p1 +
+  labs(title = "Read duplication counts", x = "Duplication group count", y = "Reads") +
+  scale_color_hue(labels = c(
+    "TRAP input", "Ins1creTRAP input 1", "Ins1creTRAP input 2",
+    "TRAP IP", "Ins1creTRAP IP 1", "Ins1creTRAP IP 2",
+    "TRAP supernatant", "Ins1creTRAP supernatant 1", "Ins1creTRAP supernatant 2"
+  )) +
+  scale_x_continuous(breaks = seq(1, 19, 2)) +
+  standard_theme_line
+
+comp_p2
