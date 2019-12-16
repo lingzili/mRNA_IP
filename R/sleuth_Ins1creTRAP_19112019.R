@@ -131,6 +131,32 @@ pca_p2
 
 ggsave(here::here("graph/Ins1creTRAP_PCA_22112019.png"), pca_p2)
 
+# Sample heatmap ----------------------------------------------------------
+tpm_table <- count_table %>%
+  dplyr::select(target_id, tpm, sample) %>%
+  pivot_wider(names_from = sample, values_from = tpm)
+
+colnames(tpm_table) <- factor(colnames(tpm_table), levels = c(
+  "target_id", "Ins1creTRAP input 1", "Ins1creTRAP input 2", "TRAP input",
+  "Ins1creTRAP IP 1", "Ins1creTRAP IP 2", "TRAP IP",
+  "Ins1creTRAP supernatant 1", "Ins1creTRAP supernatant 2", "TRAP supernatant"
+))
+
+# Remove rows with zero values
+filter_tpm_table <- tpm_table[rowSums(tpm_table[,] == 0) == 0, ]
+
+png("graph/Ins1creTRAP_19112019/sleuth_Cor.png")
+heatmap(cor(filter_tpm_table[, -1]), cexRow = 1.5, cexCol = 1.5, margins = c(16, 16))
+dev.off()
+
+# Expression distribution
+png("graph/Ins1creTRAP_19112019/sleuth_distribution.png")
+par(mar = c(12, 4, 2, 2))
+fillColor <- brewer.pal(ncol(filter_tpm_table[, -1]), "Set1")
+boxplot(filter_tpm_table[, -1], las = 2, col = fillColor, pch = 20, pt.cex = 3, cex = 1)
+title(ylab = "TPM")
+dev.off()
+
 # Group density -----------------------------------------------------------
 # It is assumed that all samples should have a similar range and distribution of expression values.
 pgd <- plot_group_density(so, use_filtered = TRUE, trans = "log", grouping = "condition", offset = 1) +

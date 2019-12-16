@@ -22,20 +22,22 @@ align_stat$Mapped <- factor(align_stat$Mapped, levels = c("Unmapped.other", "Unm
 # Set standard theme for barplot
 standard_theme_barplot <- theme(
   axis.line = element_line(colour = "black"),
-  axis.text.x = element_text(color = "black", size = 16, face = "bold", angle = 45, hjust = 1),
-  axis.text.y = element_text(color = "black", size = 18, face = "bold"),
+  axis.text.x = element_text(color = "black", size = 20, face = "bold", angle = 45, hjust = 1),
+  axis.text.y = element_text(color = "black", size = 20, face = "bold"),
   axis.title.x = element_text(color = "black", size = 20, face = "bold"),
   axis.title.y = element_text(color = "black", size = 20, face = "bold"),
   strip.text.x = element_text(color = "black", size = 20, face = "bold"),
   strip.background = element_rect(fill = "white"),
   legend.title = element_blank(),
-  legend.text = element_text(color = "black", size = 18, face = "bold"),
+  legend.text = element_text(color = "black", size = 20, face = "bold"),
   legend.key = element_rect(fill = "white"), # Remove grey background of the legend
+  legend.position = "bottom",
+  legend.direction = "vertical",
   panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(),
   panel.border = element_rect(colour = "black", fill = NA, size = 2),
   plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
-  plot.title = element_text(color = "black", size = 16, face = "bold")
+  plot.title = element_text(color = "black", size = 18, face = "bold")
 )
 
 star_plot <- align_stat %>%
@@ -60,7 +62,7 @@ pseudoalign_p2 <- pseudoalign_p1 +
 
 pseudoalign_p2
 
-ggsave(here::here("graph/Ins1creTRAP_19112019/pseudoalign_12122019.png"), pseudoalign_p2, width = 8, height = 6)
+ggsave(here::here("graph/Ins1creTRAP_19112019/pseudoalign_15122019.png"), pseudoalign_p2, width = 8, height = 6)
 
 # Mark Duplicates ---------------------------------------------------------
 mkDup_p1 <- RNAseq %>%
@@ -75,6 +77,24 @@ mkDup_p2 <- mkDup_p1 +
 mkDup_p2
 
 ggsave(here::here("graph/Ins1creTRAP_19112019/MarkDuplicates_12122019.png"), mkDup_p2, width = 12, height = 8)
+
+# Load duplicates data after removal of rRNA
+RNAseq <- read.csv("~/mRNA_IP/count/rRNA_ex_deduplication.csv")
+View(RNAseq)
+colnames(RNAseq)[1] <- "sampleName"
+
+# Rank samples by ID
+RNAseq$sampleName <- factor(RNAseq$sampleName, levels = RNAseq$sampleName[order(RNAseq$id)])
+RNAseq$sampleName
+
+rRNA_ex_Dup <- RNAseq %>%
+  gather(key = "Mapped", value = "Reads", "Read.Pair.Unique", "Unpaired.Read.Unique", "Read.Pair.Not.Optical.Duplicates", "Read.Pair.Optical.Duplicates", "Unpaired.Read.Duplicates") %>%
+  ggplot(aes(x = sampleName, y = Reads, fill = Mapped)) +
+  geom_bar(stat = "identity") +
+  labs(title = "MarkDuplicates after removal of rRNA", x = NULL, y = "% Total reads") +
+  standard_theme_barplot
+
+ggsave(here::here("graph/Ins1creTRAP_19112019/rRNA_ex_MarkDuplicates_15122019.png"), rRNA_ex_Dup, width = 12, height = 8)
 
 # Ribosomal RNA percentage ------------------------------------------------
 rRNA_p1 <- RNAseq %>%
@@ -122,7 +142,7 @@ ggsave(here::here("graph/Ins1creTRAP_19112019/counts_filtered_12122019.png"), co
 
 # featureCounts -----------------------------------------------------------
 fc <- RNAseq %>%
-  gather(key = "Feature", value = "Fragments", "Assigned", "Unassigned_MultiMapping", "Unassigned_NoFeatures", "Unassigned_Ambiguity") 
+  gather(key = "Feature", value = "Fragments", "Assigned", "Unassigned_MultiMapping", "Unassigned_NoFeatures", "Unassigned_Ambiguity")
 
 # Rank labels
 fc$Feature <- factor(fc$Feature, levels = c("Unassigned_MultiMapping", "Unassigned_NoFeatures", "Unassigned_Ambiguity", "Assigned"))
@@ -130,12 +150,12 @@ fc$Feature <- factor(fc$Feature, levels = c("Unassigned_MultiMapping", "Unassign
 fc_p2 <- fc %>%
   ggplot(aes(x = sampleName, y = Fragments, fill = Feature)) +
   geom_bar(stat = "identity") +
-  labs(title = "featureCounts on primary alignments", x = NULL, y = "Reads") +
+  labs(title = "featureCounts on primary alignments", x = NULL, y = "Alignments") +
   standard_theme_barplot
 
 fc_p2
 
-ggsave(here::here("graph/Ins1creTRAP_19112019/featureCounts_12122019.png"), fc_p2, width = 10, height = 6)
+ggsave(here::here("graph/Ins1creTRAP_19112019/featureCounts_primary_152019.png"), fc_p2, width = 8, height = 8)
 
 # genebody coverage -------------------------------------------------------
 # Load genebody coverage data
