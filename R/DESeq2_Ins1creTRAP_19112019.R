@@ -18,18 +18,18 @@ metaData <- read.csv("~/mRNA_IP/count/metadata_19112019.csv", row.names = 1)
 View(metaData)
 
 # Load count table
-data <- read.csv("~/mRNA_IP/count/featureCount_19112019_extraction.txt", row.names = 1, sep = "")
+data <- read.delim("~/mRNA_IP/count/primary_featureCount_ext_19112019.txt", row.names=1, comment.char="#")
 
 # Order by column names
 data <- data %>% dplyr::select(sort(names(.)))
 
-# Across all columns, remove "X"
-names(data) <- gsub("X", "", names(data))
+# Rename columns to match metaData
+names(data) <- gsub("X|.bam", "", names(data))
 View(data)
 
 # Create dds --------------------------------------------------------------
 # Create DESeq2Dataset object
-dds <- DESeqDataSetFromMatrix(countData = data, colData = metaData, design = ~sampleType)
+dds <- DESeqDataSetFromMatrix(countData = data, colData = metaData, design = ~mouse)
 
 # Normalize samples
 dds <- estimateSizeFactors(dds)
@@ -38,7 +38,7 @@ normalized_counts <- counts(dds, normalized = TRUE)
 
 # Marker genes ------------------------------------------------------------
 # By R plot
-png("Ins1_22112019.png")
+png("Ins1_16122019.png")
 par(mar = c(8, 8, 6, 6), las = 2, cex.lab = 1.5, cex.axis = .8, cex.main = 1.5, cex.sub = .8)
 plotCounts(dds, gene = "Ins1", intgroup = "sampleName", xlab = "")
 dev.off()
@@ -69,13 +69,12 @@ standard_theme_barplot <- theme(
   strip.text.x = element_text(color = "black", size = 18, face = "bold"),
   strip.background = element_rect(fill = "white"),
   legend.title = element_blank(),
-  legend.text = element_text(color = "black", size = 16, face = "bold"),
-  legend.key = element_rect(fill = "white"), # Remove grey background of the legend
+  legend.position = "none",
   panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
   panel.background = element_blank(),
   panel.border = element_rect(colour = "black", fill = NA, size = 2),
   plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
-  plot.title = element_text(color = "black", size = 16, face = "bold")
+  plot.title = element_text(color = "black", size = 18, face = "bold")
 )
 
 # Rename column names
@@ -156,7 +155,7 @@ rld_cor <- cor(rld_mat)
 # Plot heatmap
 pheatmap(rld_cor,
   labels_row = metaData$sampleName, labels_col = metaData$sampleName, angle_col = 45,
-  legend = FALSE, cellwidth = 25, cellheight = 25
+  legend = FALSE, fontsize = 14, cellwidth = 25, cellheight = 25
 )
 
 # PCA plot ----------------------------------------------------------------
@@ -178,7 +177,9 @@ standard_theme <- theme(
   plot.title = element_text(color = "black", size = 20, face = "bold")
 )
 
-pca <- plotPCA(rld, intgroup = "sampleName") + standard_theme
+pca <- plotPCA(rld, intgroup = "sampleName") + 
+  standard_theme +
+  scale_color_brewer(palette = "Set1")
 
 pca_fixed <- set_panel_size(pca, width = unit(10, "cm"), height = unit(4, "in"))
 
@@ -219,7 +220,8 @@ sigOE_genes <- as.character(sigOE$ensembl)
 ## BP: Biological Process, MF: Molecular Function, CC: Cellular Component, or “ALL” for all three
 ego <- enrichGO(
   gene = sigOE_genes, universe = allOE_genes, keyType = "ENSEMBL", OrgDb = org.Mm.eg.db,
-  ont = "BP", pAdjustMethod = "BH", qvalueCutoff = 0.05, readable = TRUE)
+  ont = "BP", pAdjustMethod = "BH", qvalueCutoff = 0.05, readable = TRUE
+)
 
 png("graph/Ins1creTRAP_19112019/GO_BP_03120219.png", width = 600, height = 600, units = "px")
 par(mar = c(2, 2, 2, 2))
